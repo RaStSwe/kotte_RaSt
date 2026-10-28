@@ -361,13 +361,15 @@ namespace kotte
                 blocked_by_crate = true;
                 break;
             case EntityKind::player:
-                // Player-hit consequences are outside the Week 6 lifetime seam.
+                //damage logic goes here       
                 break;
             }
         }
 
         return blocked_by_crate;
     }
+
+
 
     void Application::append_blast_ray(
         BlastEffect& effect,

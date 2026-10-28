@@ -31,6 +31,13 @@ namespace kotte
         std::size_t enemy_turns = 0;
     };
 
+    enum class ApplicationState {
+        Start,
+        Play,
+        Win,
+        Lose
+    };
+
     class Application final{
     public:
         Application(
@@ -90,7 +97,7 @@ namespace kotte
         [[nodiscard]] bool resolve_blast_tile(
             BlastEffect& effect,
             int column,
-            int row);
+            int row); 
         void append_blast_ray(
             BlastEffect& effect,
             int origin_column,
