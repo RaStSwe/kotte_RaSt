@@ -707,7 +707,7 @@ namespace kotte
         return *resolved;
     }
 
-    Entity& Application::player() noexcept{
+    Entity& Application::player() noexcept {
         return entity(player_handle_);
     }
 
@@ -748,6 +748,7 @@ namespace kotte
         EntityHandle moving_entity_handle,
         Vector2 proposed_position){
         Entity proposed_entity = entity(moving_entity_handle);
+        const Rectangle current_collision_bounds = entity_collision_bounds(proposed_entity);    
         proposed_entity.world_position = proposed_position;
 
         // Room walls are a simple boundary rule in the current map. Test the
@@ -789,6 +790,15 @@ namespace kotte
                 continue;
             }
 
+            if (candidate->kind == EntityKind::bomb
+                && candidate->bomb_state.has_value()
+                && candidate->bomb_state->owner == moving_entity_handle) {
+                const Rectangle bomb_bounds = entity_collision_bounds(*candidate);
+                if (CheckCollisionRecs(current_collision_bounds, bomb_bounds)) {
+                    continue; // still standing on it — allow leaving
+                }
+            }
+
             // Narrow phase: exact-test the remaining solid candidate.
             ++collision_diagnostics_.exact_tests;
             if(CheckCollisionRecs(proposed_collision_bounds, entity_collision_bounds(*candidate))){
@@ -804,10 +814,10 @@ namespace kotte
         switch(kind){
         case EntityKind::player:
         case EntityKind::crate:
-        case EntityKind::enemy:
-            return true;
+        case EntityKind::enemy:            
         case EntityKind::bomb:
-            return false;
+            return true;
+            //return false;
         }
 
         return false;
