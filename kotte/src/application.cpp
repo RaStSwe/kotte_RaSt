@@ -99,6 +99,19 @@ namespace kotte
         update_enemies(delta_time);
         queue_bomb_placement();
     }
+    
+    void Application::update_start_screen() noexcept {
+        if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
+            restart_game();
+            state_ = ApplicationState::Play;
+        }
+    }
+
+    void Application::update_end_screen() noexcept {
+        if (IsKeyPressed(KEY_ENTER)) {
+            state_ = ApplicationState::Start;
+        }
+    }
 
     void Application::update_timed_gameplay(float delta_time){
         // This list is independent of camera queries, so off-screen fuses advance.
@@ -172,11 +185,7 @@ namespace kotte
         update_camera(delta_time);
     }
 
-    void Application::update_player(float delta_time){
-        
-        if (player().health <= 0 && state_ != ApplicationState::Lose) {
-            state_ = ApplicationState::Lose;
-        }
+    void Application::update_player(float delta_time){    
         
         const Vector2 direction = frame_actions_.player_movement_direction;
 
@@ -587,7 +596,7 @@ namespace kotte
 
     void Application::render_start_screen(){
         Frame frame{background_color_};
-        DrawText("KOTTE", window_.width() / 2 - 60, window_.height() / 2 - 40, 40, RAYWHITE);
+        DrawText("Kaffe Rast", window_.width() / 2 - 60, window_.height() / 2 - 40, 40, RAYWHITE);
         DrawText("Press Enter to start", window_.width() / 2 - 100, window_.height() / 2 + 10, 20, LIGHTGRAY);
     }
 
@@ -597,6 +606,30 @@ namespace kotte
         DrawText(message, window_.width() / 2 - 60, window_.height() / 2 - 20, 40, RAYWHITE);
         DrawText("Press Enter to return to start", window_.width() / 2 - 120, window_.height() / 2 + 30, 20, LIGHTGRAY);
     }
+
+    void Application::restart_game() {
+        // Reset the game state to start a new game
+        place_bomb_requests_.clear();
+        bomb_detonated_facts_.clear();
+        destroy_entity_requests_.clear();
+        player_damaged_facts_.clear();
+        blast_effects_.clear();
+        enemy_handles_.clear();
+        active_bomb_handles_.clear();
+        collision_diagnostics_ = {};
+
+        // Rebuild the map, entity store, and spatial grid from a fresh seed-derived state.
+        map_ = make_room(20, 15, random_);
+        entities_ = EntityStore{};
+        spatial_grid_ = SpatialGrid{
+            {static_cast<float>(map_.width() * tile_size_),
+             static_cast<float>(map_.height() * tile_size_)},
+            spatial_cell_size_ };
+
+        populate_entities();
+        initialize_enemies();
+
+    }   
 
     void Application::populate_entities(){
         // Match the generation density so initial creation does not repeatedly
@@ -835,16 +868,6 @@ namespace kotte
         exit_requested_ = true;
     }
 
-    void Application::update_start_screen() noexcept{
-        if(IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)){
-            state_ = ApplicationState::Play;
-        }
-    }
 
-    void Application::update_end_screen() noexcept{
-        if(IsKeyPressed(KEY_ENTER)){
-            state_ = ApplicationState::Start;
-        }
-    }
 
 } //kotte
