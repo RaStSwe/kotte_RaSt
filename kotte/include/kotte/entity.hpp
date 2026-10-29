@@ -34,5 +34,7 @@ namespace kotte
         Vector2 world_position{};
         CardinalDirection movement_heading = CardinalDirection::right;
         std::optional<BombState> bomb_state;
+        int health = 0;
+        int max_health = 3;
     };
 }

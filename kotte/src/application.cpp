@@ -19,7 +19,7 @@ namespace kotte
         : window_{width, height, title, target_fps}
         , camera_{window_.size()}
         , random_{seed}
-        , map_{make_room(200, 120, random_)}
+        , map_{make_room(20, 15, random_)}
         , spatial_grid_{{
             static_cast<float>(map_.width() * tile_size_),
             static_cast<float>(map_.height() * tile_size_)}, spatial_cell_size_}
@@ -35,25 +35,26 @@ namespace kotte
     }
 
     void Application::run_frame(float delta_time){
-        // Full frame order:
-        // 1. Reset frame-local state.
-        // 2. Translate input into gameplay intent.
-        // 3. Update ordinary gameplay and queue structural requests.
-        // 4. Update timed gameplay independently of camera visibility.
-        // 5. Resolve gameplay facts into response decisions.
-        // 6. Apply structural mutations at one synchronization point.
-        // 7. Update presentation state from the synchronized world.
-        // 8. Extract, sort, and draw this frame's presentation values.
-        //
-        // Keeping one call site per phase makes event lifetime and mutation
-        // boundaries visible as the simulation grows.
         begin_frame();
         collect_frame_actions();
-        update_gameplay(delta_time);
-        update_timed_gameplay(delta_time);
-        resolve_gameplay_facts();
-        apply_structural_mutations();
-        update_presentation(delta_time);
+
+        switch(state_){
+        case ApplicationState::Start:
+            update_start_screen();
+            break;
+        case ApplicationState::Play:
+            update_gameplay(delta_time);
+            update_timed_gameplay(delta_time);
+            resolve_gameplay_facts();
+            apply_structural_mutations();
+            update_presentation(delta_time);
+            break;
+        case ApplicationState::Win:
+        case ApplicationState::Lose:
+            update_end_screen();
+            break;
+        }
+
         render();
     }
 
@@ -155,9 +156,9 @@ namespace kotte
     }
 
     void Application::apply_structural_mutations(){
-        // Entity storage and every derived index change only at this boundary.
         apply_entity_destructions();
         apply_bomb_placements();
+        apply_player_damage();
     }
 
     void Application::update_presentation(float delta_time){
@@ -172,6 +173,11 @@ namespace kotte
     }
 
     void Application::update_player(float delta_time){
+        
+        if (player().health <= 0 && state_ != ApplicationState::Lose) {
+            state_ = ApplicationState::Lose;
+        }
+        
         const Vector2 direction = frame_actions_.player_movement_direction;
 
         Entity& player_entity = player();
@@ -327,6 +333,20 @@ namespace kotte
         destroy_entity_requests_.clear();
     }
 
+    void Application::apply_player_damage(){
+    for(const PlayerDamagedFact& fact : player_damaged_facts_){
+        Entity* target = entities_.try_get(fact.player);
+        if(target == nullptr){
+            continue;
+        }
+        target->health = std::max(0, target->health - fact.amount);
+        if(target->health <= 0 && fact.player == player_handle_){
+            state_ = ApplicationState::Lose;
+        }
+    }
+    player_damaged_facts_.clear();
+}
+
     bool Application::resolve_blast_tile(
         BlastEffect& effect,
         int column,
@@ -361,7 +381,7 @@ namespace kotte
                 blocked_by_crate = true;
                 break;
             case EntityKind::player:
-                //damage logic goes here       
+                player_damaged_facts_.push_back({handle, 1});
                 break;
             }
         }
@@ -547,6 +567,9 @@ namespace kotte
             "world: {} x {} tiles | {} total", map_.width(), map_.height(), map_.tile_count());
         DrawText(diagnostics.c_str(), 10, window_.height() - 54, 20, RAYWHITE);
 
+        diagnostics = std::format("health: {} / {}", player().health, player().max_health);
+        DrawText(diagnostics.c_str(), 10, 200, 20, RAYWHITE);
+
         DrawText("move: WASD/arrows | bomb: Space | quit: Q/Escape", 10, window_.height() - 30, 20, LIGHTGRAY);
     }
 
@@ -555,9 +578,15 @@ namespace kotte
         // relocate slot storage. Handles remain valid even if this estimate grows.
         entities_.reserve(map_.tile_count() / 4);
 
-        const Entity player_entity{EntityKind::player, {tile_size_ * 2.5f, tile_size_ * 2.5f}};
+        const Entity player_entity{
+            .kind = EntityKind::player,
+            .world_position = {tile_size_ * 2.5f, tile_size_ * 2.5f},
+            .health = player_max_health_,
+            .max_health = player_max_health_
+        };
         player_handle_ = entities_.create(player_entity);
         spatial_grid_.insert(player_handle_, entity_world_bounds(player_entity));
+        
 
         for(int y = 1; y < map_.height() - 1; ++y){
             for(int x = 1; x < map_.width() - 1; ++x){

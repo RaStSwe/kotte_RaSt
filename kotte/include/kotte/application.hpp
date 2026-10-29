@@ -80,6 +80,11 @@ namespace kotte
             float remaining_seconds = 0.0f;
         };
 
+        struct PlayerDamagedFact final {
+            EntityHandle player;
+            int amount = 1;
+        };
+
         void run_frame(float delta_time);
         void begin_frame() noexcept;
         void collect_frame_actions() noexcept;
@@ -94,6 +99,7 @@ namespace kotte
         void queue_bomb_placement();
         void apply_entity_destructions();
         void apply_bomb_placements();
+        void apply_player_damage();
         [[nodiscard]] bool resolve_blast_tile(
             BlastEffect& effect,
             int column,
@@ -130,6 +136,7 @@ namespace kotte
         static constexpr int spatial_cell_tiles_ = 8;
         static constexpr float spatial_cell_size_ = tile_size_ * spatial_cell_tiles_;
         static constexpr float player_speed_ = 240.0f;
+        static constexpr int player_max_health_ = 3;
         static constexpr float enemy_speed_ = 80.0f;
         static constexpr float bomb_fuse_seconds_ = 2.0f;
         static constexpr std::uint8_t bomb_blast_range_ = 3;
@@ -161,9 +168,11 @@ namespace kotte
         std::vector<BombDetonated> bomb_detonated_facts_;
         std::vector<DestroyEntityRequest> destroy_entity_requests_;
         std::vector<BlastEffect> blast_effects_;
+        std::vector<PlayerDamagedFact> player_damaged_facts_;
         CollisionDiagnostics collision_diagnostics_;
         std::uint64_t seed_;
         EntityHandle player_handle_;
+        ApplicationState state_ = ApplicationState::Play;
         bool exit_requested_ = false;
     };
 }
