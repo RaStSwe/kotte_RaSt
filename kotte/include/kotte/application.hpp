@@ -103,7 +103,7 @@ namespace kotte
         [[nodiscard]] bool resolve_blast_tile(
             BlastEffect& effect,
             int column,
-            int row); 
+            int row);   
         void append_blast_ray(
             BlastEffect& effect,
             int origin_column,
@@ -111,6 +111,10 @@ namespace kotte
             int column_step,
             int row_step,
             std::uint8_t range);
+        void update_start_screen() noexcept;
+        void update_end_screen() noexcept;
+        void render_start_screen();
+        void render_end_screen();
         void update_camera(float delta_time) noexcept;
         void render();
         void populate_entities();
@@ -172,7 +176,7 @@ namespace kotte
         CollisionDiagnostics collision_diagnostics_;
         std::uint64_t seed_;
         EntityHandle player_handle_;
-        ApplicationState state_ = ApplicationState::Play;
+        ApplicationState state_ = ApplicationState::Start;
         bool exit_requested_ = false;
     };
 }

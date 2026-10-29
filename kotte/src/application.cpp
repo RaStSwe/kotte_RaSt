@@ -418,6 +418,18 @@ namespace kotte
     }
 
     void Application::render(){
+        switch(state_){
+        case ApplicationState::Start:
+            render_start_screen();
+            return;
+        case ApplicationState::Win:
+        case ApplicationState::Lose:
+            render_end_screen();
+            return;
+        case ApplicationState::Play:
+            break; // fall through to normal gameplay rendering below
+        }
+
         Frame frame{background_color_};
 
         const Rectangle world_view = camera_.world_view();
@@ -571,6 +583,19 @@ namespace kotte
         DrawText(diagnostics.c_str(), 10, 200, 20, RAYWHITE);
 
         DrawText("move: WASD/arrows | bomb: Space | quit: Q/Escape", 10, window_.height() - 30, 20, LIGHTGRAY);
+    }
+
+    void Application::render_start_screen(){
+        Frame frame{background_color_};
+        DrawText("KOTTE", window_.width() / 2 - 60, window_.height() / 2 - 40, 40, RAYWHITE);
+        DrawText("Press Enter to start", window_.width() / 2 - 100, window_.height() / 2 + 10, 20, LIGHTGRAY);
+    }
+
+    void Application::render_end_screen(){
+        Frame frame{background_color_};
+        const char* message = state_ == ApplicationState::Win ? "YOU WIN" : "YOU LOSE";
+        DrawText(message, window_.width() / 2 - 60, window_.height() / 2 - 20, 40, RAYWHITE);
+        DrawText("Press Enter to return to start", window_.width() / 2 - 120, window_.height() / 2 + 30, 20, LIGHTGRAY);
     }
 
     void Application::populate_entities(){
@@ -808,6 +833,18 @@ namespace kotte
 
     void Application::request_exit() noexcept{
         exit_requested_ = true;
+    }
+
+    void Application::update_start_screen() noexcept{
+        if(IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)){
+            state_ = ApplicationState::Play;
+        }
+    }
+
+    void Application::update_end_screen() noexcept{
+        if(IsKeyPressed(KEY_ENTER)){
+            state_ = ApplicationState::Start;
+        }
     }
 
 } //kotte
