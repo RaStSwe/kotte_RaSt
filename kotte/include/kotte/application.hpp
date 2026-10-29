@@ -145,7 +145,7 @@ namespace kotte
         static constexpr int player_max_health_ = 3;
         static constexpr float enemy_speed_ = 80.0f;
         static constexpr float bomb_fuse_seconds_ = 2.0f;
-        static constexpr std::uint8_t bomb_blast_range_ = 3;
+        static constexpr std::uint8_t bomb_blast_range_ = 1; //bomb range
         static constexpr float blast_effect_seconds_ = 0.35f;
         static constexpr Color background_color_{0x11, 0x22, 0x33, 0xff};
         static constexpr Color floor_colors_[3]{
@@ -159,6 +159,7 @@ namespace kotte
         static constexpr Color crate_color_{0xb0, 0x72, 0x3c, 0xff};
         static constexpr Color enemy_color_{0xd9, 0x4f, 0x70, 0xff};
         static constexpr Color wall_color_{0x78, 0x5f, 0x47, 0xff};
+        static constexpr Color powerup_color_{ 0x4e, 0xc1, 0x4e, 0xff };
 
         Window window_; // Constructed first, destroyed last.
         Camera camera_;

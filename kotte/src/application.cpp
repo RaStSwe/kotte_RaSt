@@ -397,6 +397,8 @@ namespace kotte
             case EntityKind::player:
                 player_damaged_facts_.push_back({handle, 1});
                 break;
+            case EntityKind::powerup:
+                break; // nothing destroyes the power yp
             }
         }
 
@@ -722,6 +724,7 @@ namespace kotte
         case EntityKind::bomb: size = {22.0f, 22.0f}; break;
         case EntityKind::crate: size = {36.0f, 48.0f}; break;
         case EntityKind::enemy: size = {28.0f, 30.0f}; break;
+        case EntityKind::powerup: size = { 20.0f, 20.0f }; break;
         }
 
         const Vector2 top_left = entity.world_position - Vector2{size.x / 2.0f, size.y};
@@ -791,7 +794,7 @@ namespace kotte
             }
 
             if (candidate->kind == EntityKind::bomb
-                && candidate->bomb_state.has_value()
+                && candidate->bomb_state.has_value()    
                 && candidate->bomb_state->owner == moving_entity_handle) {
                 const Rectangle bomb_bounds = entity_collision_bounds(*candidate);
                 if (CheckCollisionRecs(current_collision_bounds, bomb_bounds)) {
@@ -817,7 +820,8 @@ namespace kotte
         case EntityKind::enemy:            
         case EntityKind::bomb:
             return true;
-            //return false;
+        case EntityKind::powerup:
+            return false;
         }
 
         return false;
