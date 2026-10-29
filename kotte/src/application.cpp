@@ -339,6 +339,10 @@ namespace kotte
             return !entities_.contains(handle);
         });
 
+        if (enemy_handles_.empty() && state_ == ApplicationState::Play) {
+            state_ = ApplicationState::Win;
+        }
+
         destroy_entity_requests_.clear();
     }
 
