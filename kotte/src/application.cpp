@@ -339,7 +339,8 @@ namespace kotte
             return !entities_.contains(handle);
         });
 
-        if (enemy_handles_.empty() && state_ == ApplicationState::Play) {
+        if (enemy_handles_.empty() && state_ == ApplicationState::Play) {  //win condition - all enemies destroyed
+            WaitTime(0.5f); 
             state_ = ApplicationState::Win;
         }
 
@@ -428,6 +429,12 @@ namespace kotte
         (void) delta_time; // name the argument to avoid the static analyzer yelling at us. :) We'll animate the camera later.
         camera_.set_viewport_size(window_.size());
         camera_.set_centre(player().world_position);
+    }
+
+    int Application::center_textX(const char* text, int fontSize) {
+        int tempWidth = MeasureText(text, fontSize);
+        int textCenteredX = ((GetScreenWidth() / 2) - (tempWidth / 2));
+        return textCenteredX;
     }
 
     void Application::render(){
@@ -600,15 +607,15 @@ namespace kotte
 
     void Application::render_start_screen(){
         Frame frame{background_color_};
-        DrawText("Kaffe Rast", window_.width() / 2 - 60, window_.height() / 2 - 40, 40, RAYWHITE);
-        DrawText("Press Enter to start", window_.width() / 2 - 100, window_.height() / 2 + 10, 20, LIGHTGRAY);
+        DrawText("Kaffe Rast", center_textX("Kaffe Rast", 40), window_.height() / 2 - 40, 40, RAYWHITE);
+        DrawText("Press Enter to start", center_textX("Press Enter to start", 20), window_.height() / 2 + 10, 20, LIGHTGRAY);
     }
 
     void Application::render_end_screen(){
         Frame frame{background_color_};
         const char* message = state_ == ApplicationState::Win ? "YOU WIN" : "YOU LOSE";
-        DrawText(message, window_.width() / 2 - 60, window_.height() / 2 - 20, 40, RAYWHITE);
-        DrawText("Press Enter to return to start", window_.width() / 2 - 120, window_.height() / 2 + 30, 20, LIGHTGRAY);
+        DrawText(message, center_textX(message, 40), window_.height() / 2 - 20, 40, RAYWHITE);
+        DrawText("Press Enter to return to start", center_textX("Press Enter to return to start", 20), window_.height() / 2 + 30, 20, LIGHTGRAY);
     }
 
     void Application::restart_game() {

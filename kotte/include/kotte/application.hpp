@@ -116,6 +116,7 @@ namespace kotte
         void render_start_screen();
         void render_end_screen();
         void update_camera(float delta_time) noexcept;
+        int center_textX(const char* text, int fontSize);
         void render();
         void populate_entities();
         void initialize_enemies();
