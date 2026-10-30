@@ -85,6 +85,10 @@ namespace kotte
             int amount = 1;
         };
 
+        struct PowerupCollectedFact final {
+            EntityHandle player;
+        };
+
         void run_frame(float delta_time);
         void begin_frame() noexcept;
         void collect_frame_actions() noexcept;
@@ -100,6 +104,7 @@ namespace kotte
         void apply_entity_destructions();
         void apply_bomb_placements();
         void apply_player_damage();
+        void apply_powerup_pickup();
         [[nodiscard]] bool resolve_blast_tile(
             BlastEffect& effect,
             int column,
@@ -141,11 +146,13 @@ namespace kotte
         static constexpr int tile_size_ = 40;
         static constexpr int spatial_cell_tiles_ = 8;
         static constexpr float spatial_cell_size_ = tile_size_ * spatial_cell_tiles_;
+        static constexpr float powerup_drop_chance_ = 0.2f;
         static constexpr float player_speed_ = 240.0f;
         static constexpr int player_max_health_ = 3;
         static constexpr float enemy_speed_ = 80.0f;
         static constexpr float bomb_fuse_seconds_ = 2.0f;
-        static constexpr std::uint8_t bomb_blast_range_ = 1; //bomb range
+        static constexpr std::uint8_t bomb_blast_range_ = 1; //bomb range, the original value, reseting the game comes back to this value
+
         static constexpr float blast_effect_seconds_ = 0.35f;
         static constexpr Color background_color_{0x11, 0x22, 0x33, 0xff};
         static constexpr Color floor_colors_[3]{
@@ -176,10 +183,15 @@ namespace kotte
         std::vector<DestroyEntityRequest> destroy_entity_requests_;
         std::vector<BlastEffect> blast_effects_;
         std::vector<PlayerDamagedFact> player_damaged_facts_;
+        std::vector<PowerupCollectedFact> powerup_collected_facts_;
+
         CollisionDiagnostics collision_diagnostics_;
         std::uint64_t seed_;
         EntityHandle player_handle_;
+        std::uint8_t player_bomb_range_ = bomb_blast_range_; // runtime value, mutable
         ApplicationState state_ = ApplicationState::Start;
         bool exit_requested_ = false;
+
+        
     };
 }

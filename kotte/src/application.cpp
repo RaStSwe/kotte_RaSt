@@ -172,6 +172,7 @@ namespace kotte
         apply_entity_destructions();
         apply_bomb_placements();
         apply_player_damage();
+        apply_powerup_pickup();
     }
 
     void Application::update_presentation(float delta_time){
@@ -213,6 +214,26 @@ namespace kotte
 
         const Rectangle new_world_bounds = entity_world_bounds(player_entity);
         spatial_grid_.update(player_handle_, old_world_bounds, new_world_bounds);
+
+        // Powerup pickup detection: broad phase query at the player's final bounds.
+        const Rectangle player_collision_bounds = entity_collision_bounds(player_entity);
+        const SpatialQuery pickup_query = spatial_grid_.query(player_collision_bounds);
+
+        for(const EntityHandle candidate_handle : pickup_query.entity_handles){
+            if(candidate_handle == player_handle_){
+                continue;
+            }
+
+            const Entity* candidate = entities_.try_get(candidate_handle);
+            if(candidate == nullptr || candidate->kind != EntityKind::powerup){
+                continue;
+            }
+
+            if(CheckCollisionRecs(player_collision_bounds, entity_collision_bounds(*candidate))){
+                destroy_entity_requests_.push_back({candidate_handle});
+                powerup_collected_facts_.push_back({player_handle_});
+            }
+        }
     }
 
     void Application::try_move_player(Vector2 axis_displacement){
@@ -231,6 +252,18 @@ namespace kotte
 
         // Accept the clear proposal; grid synchronization happens after both axes.
         player_entity.world_position = proposed_position;
+    }
+
+    void Application::apply_powerup_pickup() {
+        for (const PowerupCollectedFact& fact : powerup_collected_facts_) {
+            Entity* player_entity = entities_.try_get(fact.player);
+            if (player_entity == nullptr) {
+                continue;
+            }
+            // Increase the bomb blast range by one, with no upper cap for now.
+            ++player_bomb_range_;
+        }
+        powerup_collected_facts_.clear();
     }
 
     void Application::update_enemies(float delta_time){
@@ -292,7 +325,7 @@ namespace kotte
                 .bomb_state = BombState{
                     .owner = request.owner,
                     .fuse_remaining = bomb_fuse_seconds_,
-                    .blast_range = bomb_blast_range_
+                    .blast_range = player_bomb_range_   // was bomb_blast_range_
                 }
             };
             const EntityHandle bomb_handle = entities_.create(bomb);
@@ -307,9 +340,6 @@ namespace kotte
     }
 
     void Application::apply_entity_destructions(){
-        // A moving entity may overlap several blast tiles, and several bombs may
-        // reach it in one frame. Canonicalizing requests makes that multiplicity
-        // explicit instead of depending on a forgiving destruction order.
         std::ranges::sort(destroy_entity_requests_, {}, &DestroyEntityRequest::entity);
         const auto duplicate_tail = std::ranges::unique(
             destroy_entity_requests_, {}, &DestroyEntityRequest::entity);
@@ -321,17 +351,26 @@ namespace kotte
                 continue;
             }
 
-            // Spatial membership is derived from the live entity, so remove it
-            // while the handle can still resolve to the bounds used at insertion.
+            // Only crates and enemies have a chance to drop a powerup.
+            const bool can_drop = doomed->kind == EntityKind::crate
+                || doomed->kind == EntityKind::enemy;
+            const Vector2 drop_position = doomed->world_position;
+
             spatial_grid_.remove(request.entity, entity_world_bounds(*doomed));
             const bool destroyed = entities_.destroy(request.entity);
             assert(destroyed);
             (void) destroyed;
+
+            if(can_drop && random_.coin_flip(powerup_drop_chance_)){
+                const Entity powerup{
+                    .kind = EntityKind::powerup,
+                    .world_position = drop_position
+                };
+                const EntityHandle powerup_handle = entities_.create(powerup);
+                spatial_grid_.insert(powerup_handle, entity_world_bounds(powerup));
+            }
         }
 
-        // These update lists are non-owning views. A single cleanup pass keeps
-        // their iteration dense without teaching each destruction source about
-        // every list that happens to reference an entity.
         std::erase_if(enemy_handles_, [this](EntityHandle handle){
             return !entities_.contains(handle);
         });
@@ -881,6 +920,7 @@ namespace kotte
         case EntityKind::bomb: return bomb_color_;
         case EntityKind::crate: return crate_color_;
         case EntityKind::enemy: return enemy_color_;
+        case EntityKind::powerup: return powerup_color_;
         }
         return MAGENTA;
     }
