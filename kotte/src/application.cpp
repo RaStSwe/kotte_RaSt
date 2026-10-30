@@ -148,7 +148,11 @@ namespace kotte
     }
 
     void Application::resolve_gameplay_facts(){
-        for(const BombDetonated& fact : bomb_detonated_facts_){
+        // Index-based loop: resolve_blast_tile() may append new facts during
+        // this call (chain-reacted bombs), and those must be processed too.
+        for(std::size_t i = 0; i < bomb_detonated_facts_.size(); ++i){
+            const BombDetonated fact = bomb_detonated_facts_[i]; // copy: push_back below may reallocate
+
             BlastEffect effect;
             effect.remaining_seconds = blast_effect_seconds_;
             effect.tile_centres.reserve(static_cast<std::size_t>(fact.blast_range) * 4 + 1);
@@ -273,6 +277,9 @@ namespace kotte
             // Increase the bomb blast range by one, with no upper cap for now.
             ++player_bomb_range_;
             ++player_bomb_capasity_;
+            if (player_bomb_range_ >= 3) {
+                player_bomb_range_ = 3;
+            }
         }
         powerup_collected_facts_.clear();
     }
@@ -434,15 +441,21 @@ namespace kotte
         const SpatialQuery contacts = spatial_grid_.query(tile_bounds);
         bool blocked_by_crate = false;
 
-        for(const EntityHandle handle : contacts.entity_handles){
-            const Entity* candidate = entities_.try_get(handle);
-            if(candidate == nullptr
-                || !CheckCollisionRecs(tile_bounds, entity_collision_bounds(*candidate))){
+        for (const EntityHandle handle : contacts.entity_handles) {
+            Entity* candidate = entities_.try_get(handle); // non-const: bomb case needs to mutate bomb_state
+            if (candidate == nullptr
+                || !CheckCollisionRecs(tile_bounds, entity_collision_bounds(*candidate))) {
                 continue;
             }
 
             switch(candidate->kind){
             case EntityKind::bomb:
+                if (candidate->bomb_state.has_value() && !candidate->bomb_state->detonation_requested) {
+                    candidate->bomb_state->fuse_remaining = std::min(
+                        candidate->bomb_state->fuse_remaining,
+                        bomb_chain_reaction_delay_);                        
+                }
+                break;
             case EntityKind::enemy:
                 destroy_entity_requests_.push_back({handle});
                 break;

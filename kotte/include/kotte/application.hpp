@@ -102,7 +102,7 @@ namespace kotte
         void update_enemies(float delta_time);
         void queue_bomb_placement();
         void apply_entity_destructions();
-        void apply_bomb_placements();
+        void apply_bomb_placements();  
         void apply_player_damage();
         void apply_powerup_pickup();
         [[nodiscard]] bool resolve_blast_tile(
@@ -155,6 +155,7 @@ namespace kotte
         static constexpr int player_max_health_ = 3;
         static constexpr float enemy_speed_ = 80.0f;
         static constexpr float bomb_fuse_seconds_ = 2.0f;
+        static constexpr float bomb_chain_reaction_delay_ = 0.4f;
         static constexpr std::uint8_t bomb_blast_range_ = 1; //bomb range, the original value, reseting the game comes back to this value
         int player_bomb_capasity_ = 1; //how many bombs can be placed at the same time
 
