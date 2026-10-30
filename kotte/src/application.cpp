@@ -71,7 +71,7 @@ namespace kotte
         if(IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_Q)){
             request_exit();
         }
-        frame_actions_.place_bomb = IsKeyPressed(KEY_J);
+        frame_actions_.place_bomb = IsKeyPressed(KEY_SPACE);
 
         Vector2& movement_direction = frame_actions_.player_movement_direction;
         if(IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)){
