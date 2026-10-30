@@ -225,13 +225,18 @@ namespace kotte
             }
 
             const Entity* candidate = entities_.try_get(candidate_handle);
-            if(candidate == nullptr || candidate->kind != EntityKind::powerup){
-                continue;
+            if(candidate == nullptr){
+                continue;   
             }
 
-            if(CheckCollisionRecs(player_collision_bounds, entity_collision_bounds(*candidate))){
+            if(candidate->kind == EntityKind::powerup
+                && CheckCollisionRecs(player_collision_bounds, entity_collision_bounds(*candidate))){
                 destroy_entity_requests_.push_back({candidate_handle});
                 powerup_collected_facts_.push_back({player_handle_});
+            }
+            else if(candidate->kind == EntityKind::portal
+                && CheckCollisionRecs(player_collision_bounds, entity_collision_bounds(*candidate))){
+                next_stage();
             }
         }
     }
@@ -382,7 +387,7 @@ namespace kotte
 
             const Entity portal{
                 .kind = EntityKind::portal,
-                .world_position = tile_centre(map_.width()/2, map_.height()/2) // spawn portal at top left corner
+                .world_position = tile_centre(2, 2) // spawns portal on player spawn point since its always a free tile
             };
 
             const EntityHandle portal_handle = entities_.create(portal);
@@ -660,13 +665,37 @@ namespace kotte
 
     void Application::render_end_screen(){
         Frame frame{background_color_};
-        const char* message = state_ == ApplicationState::Win ? "YOU WIN" : "YOU LOSE";
-        DrawText(message, center_textX(message, 40), window_.height() / 2 - 20, 40, RAYWHITE);
+       
+        DrawText("Game Over", center_textX("Game Over", 40), window_.height() / 2 - 20, 40, RAYWHITE);
         DrawText("Press Enter to return to start", center_textX("Press Enter to return to start", 20), window_.height() / 2 + 30, 20, LIGHTGRAY);
     }
 
+    void  Application::next_stage() {
+        // Reset the game state to start a new stage
+        place_bomb_requests_.clear();
+        bomb_detonated_facts_.clear();
+        destroy_entity_requests_.clear();
+        player_damaged_facts_.clear();
+        blast_effects_.clear();
+        enemy_handles_.clear();
+        active_bomb_handles_.clear();
+        collision_diagnostics_ = {};
+        portal_spawned_ = false;
+       
+        int new_width = map_.width() + 2;  
+        int new_height = map_.height() + 2; 
+        
+        map_ = make_room(new_width, new_height, random_);
+        entities_ = EntityStore{};
+        spatial_grid_ = SpatialGrid{
+            {static_cast<float>(map_.width() * tile_size_),
+             static_cast<float>(map_.height() * tile_size_)},
+            spatial_cell_size_ };
+        populate_entities();
+        initialize_enemies();
+    }
+
     void Application::restart_game() {
-        // Reset the game state to start a new game
         place_bomb_requests_.clear();
         bomb_detonated_facts_.clear();
         destroy_entity_requests_.clear();
@@ -676,7 +705,6 @@ namespace kotte
         active_bomb_handles_.clear();
         collision_diagnostics_ = {};
 
-        // Rebuild the map, entity store, and spatial grid from a fresh seed-derived state.
         map_ = make_room(20, 15, random_);
         entities_ = EntityStore{};
         spatial_grid_ = SpatialGrid{
@@ -774,7 +802,8 @@ namespace kotte
         case EntityKind::bomb: size = {22.0f, 22.0f}; break;
         case EntityKind::crate: size = {36.0f, 48.0f}; break;
         case EntityKind::enemy: size = {28.0f, 30.0f}; break;
-        case EntityKind::powerup: size = { 20.0f, 20.0f }; break;
+        case EntityKind::powerup: size = {20.0f, 20.0f}; break;
+        case EntityKind::portal: size = {36.0f, 36.0f}; break;
         }
 
         const Vector2 top_left = entity.world_position - Vector2{size.x / 2.0f, size.y};
@@ -782,15 +811,14 @@ namespace kotte
     }
 
     Rectangle Application::entity_collision_bounds(const Entity& entity) const noexcept{
-        // Collision uses a smaller footprint around the part touching the
-        // floor. The complete visual rectangle remains in the spatial grid so
-        // broad-phase queries conservatively find every possible contact.
         Vector2 size{};
         switch(entity.kind){
         case EntityKind::player: size = {20.0f, 16.0f}; break;
         case EntityKind::bomb: size = {18.0f, 12.0f}; break;
         case EntityKind::crate: size = {32.0f, 32.0f}; break;
         case EntityKind::enemy: size = {24.0f, 14.0f}; break;
+        case EntityKind::powerup: size = {20.0f, 20.0f}; break;
+        case EntityKind::portal: size = {36.0f, 36.0f}; break;
         }
 
         const Vector2 top_left = entity.world_position - Vector2{size.x / 2.0f, size.y};
@@ -933,6 +961,7 @@ namespace kotte
         case EntityKind::crate: return crate_color_;
         case EntityKind::enemy: return enemy_color_;
         case EntityKind::powerup: return powerup_color_;
+        case EntityKind::portal: return portal_color_; 
         }
         return MAGENTA;
     }
