@@ -142,6 +142,7 @@ namespace kotte
         [[nodiscard]] static Vector2 cardinal_vector(CardinalDirection direction) noexcept;
         [[nodiscard]] CardinalDirection different_enemy_direction(CardinalDirection current_direction);
         [[nodiscard]] bool owner_has_active_bomb(EntityHandle owner) const noexcept;
+        [[nodiscard]] int owner_active_bomb_count(EntityHandle owner) const noexcept;
         [[nodiscard]] static Vector2 tile_centre(Vector2 world_position) noexcept;
         [[nodiscard]] static Vector2 tile_centre(int column, int row) noexcept;
         [[nodiscard]] static Color entity_color(EntityKind kind) noexcept;
@@ -149,12 +150,13 @@ namespace kotte
         static constexpr int tile_size_ = 40;
         static constexpr int spatial_cell_tiles_ = 8;
         static constexpr float spatial_cell_size_ = tile_size_ * spatial_cell_tiles_;
-        static constexpr float powerup_drop_chance_ = 0.2f;
+        static constexpr float powerup_drop_chance_ = 0.3f;
         static constexpr float player_speed_ = 240.0f;
         static constexpr int player_max_health_ = 3;
         static constexpr float enemy_speed_ = 80.0f;
         static constexpr float bomb_fuse_seconds_ = 2.0f;
         static constexpr std::uint8_t bomb_blast_range_ = 1; //bomb range, the original value, reseting the game comes back to this value
+        int player_bomb_capasity_ = 1; //how many bombs can be placed at the same time
 
         static constexpr float blast_effect_seconds_ = 0.35f;
         static constexpr Color background_color_{0x11, 0x22, 0x33, 0xff};

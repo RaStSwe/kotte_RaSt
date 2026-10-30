@@ -448,7 +448,7 @@ namespace kotte
                 player_damaged_facts_.push_back({handle, 1});
                 break;
             case EntityKind::powerup:
-                break; // nothing destroyes the power yp
+                break; // nothing destroys the power up
             }
         }
 
@@ -704,6 +704,9 @@ namespace kotte
         enemy_handles_.clear();
         active_bomb_handles_.clear();
         collision_diagnostics_ = {};
+        portal_spawned_ = false;
+        current_stage_ = 1;
+        player_bomb_range_ = bomb_blast_range_;
 
         map_ = make_room(20, 15, random_);
         entities_ = EntityStore{};
