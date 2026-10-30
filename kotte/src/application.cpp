@@ -19,7 +19,7 @@ namespace kotte
         : window_{width, height, title, target_fps}
         , camera_{window_.size()}
         , random_{seed}
-        , map_{make_room(20, 15, random_)}
+        , map_{make_room(10, 15, random_)}
         , spatial_grid_{{
             static_cast<float>(map_.width() * tile_size_),
             static_cast<float>(map_.height() * tile_size_)}, spatial_cell_size_}
@@ -352,8 +352,7 @@ namespace kotte
             }
 
             // Only crates and enemies have a chance to drop a powerup.
-            const bool can_drop = doomed->kind == EntityKind::crate
-                || doomed->kind == EntityKind::enemy;
+            const bool can_drop =  doomed->kind == EntityKind::enemy;
             const Vector2 drop_position = doomed->world_position;
 
             spatial_grid_.remove(request.entity, entity_world_bounds(*doomed));
@@ -378,9 +377,16 @@ namespace kotte
             return !entities_.contains(handle);
         });
 
-        if (enemy_handles_.empty() && state_ == ApplicationState::Play) {  //win condition - all enemies destroyed
-            WaitTime(0.5f); 
-            state_ = ApplicationState::Win;
+        if (enemy_handles_.empty() && state_ == ApplicationState::Play && !portal_spawned_) {  //win condition - all enemies destroyed then portal to next stage
+            portal_spawned_ = true;
+
+            const Entity portal{
+                .kind = EntityKind::portal,
+                .world_position = tile_centre(map_.width()/2, map_.height()/2) // spawn portal at top left corner
+            };
+
+            const EntityHandle portal_handle = entities_.create(portal);
+            spatial_grid_.insert(portal_handle, entity_world_bounds(portal));
         }
 
         destroy_entity_requests_.clear();
@@ -715,6 +721,11 @@ namespace kotte
                     static_cast<float>(x * tile_size_ + tile_size_ / 2),
                     static_cast<float>(y * tile_size_ + tile_size_ / 2)
                 };
+                
+                if (kind == EntityKind::enemy && y == 1) {
+                    continue;
+                }
+
                 const Entity new_entity{kind, world_position};
                 const EntityHandle handle = entities_.create(new_entity);
                 spatial_grid_.insert(handle, entity_world_bounds(new_entity));
@@ -860,6 +871,7 @@ namespace kotte
         case EntityKind::bomb:
             return true;
         case EntityKind::powerup:
+        case EntityKind::portal:
             return false;
         }
 

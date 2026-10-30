@@ -13,7 +13,8 @@ namespace kotte
         bomb,
         crate,
         enemy,
-        powerup
+        powerup,
+        portal
     };
 
     enum class CardinalDirection : std::uint8_t {
