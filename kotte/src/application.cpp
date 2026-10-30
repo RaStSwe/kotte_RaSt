@@ -71,7 +71,7 @@ namespace kotte
         if(IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_Q)){
             request_exit();
         }
-        frame_actions_.place_bomb = IsKeyPressed(KEY_SPACE);
+        frame_actions_.place_bomb = IsKeyPressed(KEY_J);
 
         Vector2& movement_direction = frame_actions_.player_movement_direction;
         if(IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)){
@@ -85,6 +85,11 @@ namespace kotte
         }
         if(IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S)){
             movement_direction.y += 1.0f;
+        }
+
+        if (IsKeyPressed(KEY_P)) {
+            ++player_bomb_capasity_;
+            ++player_bomb_range_;
         }
 
         // Normalize intent before simulation so bindings cannot change movement speed.
@@ -267,6 +272,7 @@ namespace kotte
             }
             // Increase the bomb blast range by one, with no upper cap for now.
             ++player_bomb_range_;
+            ++player_bomb_capasity_;
         }
         powerup_collected_facts_.clear();
     }
@@ -320,7 +326,7 @@ namespace kotte
         for(const PlaceBombRequest& request : place_bomb_requests_){
             const Entity* owner = entities_.try_get(request.owner);
             if(owner == nullptr || owner->kind != EntityKind::player
-                || owner_has_active_bomb(request.owner)){
+                || owner_active_bomb_count(request.owner) >= player_bomb_capasity_){
                 continue;
             }
 
@@ -707,6 +713,7 @@ namespace kotte
         portal_spawned_ = false;
         current_stage_ = 1;
         player_bomb_range_ = bomb_blast_range_;
+        player_bomb_capasity_ = 1;
 
         map_ = make_room(20, 15, random_);
         entities_ = EntityStore{};
@@ -940,6 +947,15 @@ namespace kotte
                 && bomb->bomb_state.has_value()
                 && bomb->bomb_state->owner == owner;
         });
+    }
+
+    int Application::owner_active_bomb_count(EntityHandle owner) const noexcept{
+        return static_cast<int>(std::ranges::count_if(active_bomb_handles_, [this, owner](EntityHandle bomb_handle){
+            const Entity* bomb = entities_.try_get(bomb_handle);
+            return bomb != nullptr
+                && bomb->bomb_state.has_value()
+                && bomb->bomb_state->owner == owner;
+        }));
     }
 
     Vector2 Application::tile_centre(Vector2 world_position) noexcept{
