@@ -6,9 +6,13 @@
 
 ## How to play
 
-- **Controls:** [movement, bombs, restart, and any extension controls]
-- **Objective and rules:** [how to win/lose; which result wins if both happen together; any extension rules needed to understand the game]
-- **Configurations / demo setup:** [how to select gameplay/stress configurations and use any special setup or debug keys; write “default” where appropriate]
+- **Controls:**
+  - Move with WASD
+  - Place a bomb with SPACE
+- **Objective and rules:**
+  - After all enemies are defeated on the stage a blue portal will spawn in the top left corner and take you to the next        stage
+- **Configurations / demo setup:**
+  - Pressing P will give you a power up without needing to pick up one 
 
 ## Features and validation
 
@@ -18,47 +22,23 @@ Use the practical checks in the assignment to validate the acceptance conditions
 
 | Feature | Check, observed result, and expected behaviour |
 | --- | --- |
-| 1. Player damage and death | [what I tested, what I observed, and whether it matched the expected behaviour] |
-| 2. Round states and objective | [what I tested, what I observed, and whether it matched the expected behaviour] |
-| 3. Safe restart | [what I tested, what I observed, and whether it matched the expected behaviour] |
-| 4. Solid bombs with owner escape | [what I tested, what I observed, and whether it matched the expected behaviour] |
-| 5. Blast-range pickup | [what I tested, what I observed, and whether it matched the expected behaviour] |
-| [# and name of chosen extension 1] | [what I tested, what I observed, and whether it matched the expected behaviour] |
-| [# and name of chosen extension 2] | [what I tested, what I observed, and whether it matched the expected behaviour] |
-| [# and name of chosen extension 3] | [what I tested, what I observed, and whether it matched the expected behaviour] |
+| 1. Player damage and death | When I stood in my own bombs explosion the player took 1 damage as expected  |
+| 2. Round states and objective | There is a start scene, game state, and a game over screen, moving between states is smooth and being in a state never influences another state. Killing all enemies also complets a stage and spawn the portal to the next stage. The objective is not dying and to keep going as far as possible like tetris |
+| 3. Safe restart | After getting a game over and reseting back to the start screen and starting the game again all values were reset or returned to its original value additonaly gameplay only happens in the gameplay state (making rooms, spawning enemies, etc) so there is no gameplay happening in the background when in start screen|
+| 4. Solid bombs with owner escape | When a bomb was placed it was solid for enemies and the player after the player moved away from the bomb so everything is working as intended  |
+| 5. Blast-range pickup | Enemies drop a pickup when killed (30% chance) and it does not get removed when in an explosion and stays on the stage until collected and when picked up increases explosion range by 1 (max of 3) and also gives the player one more bomb at a time and it works as it should, reseting the game also removes any power up from the previous round |
+| 6. Multiple bombs per owner | After getting a power up and only after getting a power up the player can place another bomb while there already is another bomb present on the stage. The new bomb doesnt replace another bomb but places anotherone one the board with its own fuse, and it does what it meant to do with the player being able to place another bomb equal to the amount of powerups they have collcted on that run  |
+| 7. Chain reactions | When another bomb hits a bomb the bomb that was hit ignores it fuse for another a short delay instead (0,4 sec which is 0,5 sec longer than the visual explosion for a bomb) and it also does what is supposed to do a bomb makes another bomb explode, one bomb can hit multiple bombs however causing multiple explosions at once which makes sense since they got hit at the same time.  |
+| 10. Exit or progression gate| After defeating all enemies on a stage the portal appears in the place as the player spawns in when entering a room, the portal is however the edge of a tile so it covers the halfs of two tiles. It probablt has to do with where positions are calculated (top left or bottom right corner etc) But touching the portal takes the player to new stage that has new enemies, crate positions, and is also bigger whilst the player keeping all power up and previous health  |
 
-Example: “I ended a round with live bombs and restarted three times to check that old-round state was cleared. No old explosions appeared, and bomb capacity reset each time.” Report your actual results, including any failures or remaining limitations; stating that something “works” does not describe a check.
-
-**Known issues:** [remaining problems and how to encounter them, or “None known after testing”]
+**Known issues:** 
+- Since blast detection is instant and before any visuals you dont even see the bomb that kills you you just "randomly" and instatly go to the game over screen
+- Bombs placed on the same tile as a crate does not render but still explodes (with explosion visual) and damages the player
+- The enemies dont deal any damage to the player (not an issue i didnt implement that)  
 
 ## Sources and assistance
 
 This project builds on the shared Kotte foundations.
-
-[Briefly identify meaningful external code/resources, discussion or collaboration, and AI assistance. Link to sources where relevant, say what they contributed, and explain what you checked yourself. State “None beyond the course material” if applicable. No prompt transcript or activity diary is needed. Retain required licence/attribution notices.]
-
-## Architectural investigation — VG only
-
-Delete this section for a G submission. For VG, pose a focused engineering question about one decision in your implementation, investigate it, and draw a conclusion from evidence. Documenting the explanation already required for G is not enough. Aim for half a page to one page, excluding small tables, diagrams, or code excerpts. You can use the same decision in your presentation too.
-
-### Decision
-
-[State the question you are investigating and the implementation decision it concerns. Describe your current approach and a plausible alternative. Identify the relevant code. You do not need to implement the alternative.]
-
-### Method
-
-[How did you investigate the decision? Give enough detail to reproduce the key observation: setup, input, configuration/seed, and the test, trace, debugger inspection, or other method used.]
-
-### Evidence
-
-[What did you actually observe in your game? Include the relevant result or a small excerpt, table, or link to supporting material.]
-
-### Interpretation
-
-[Explain why it happened using the relevant code or architecture. Analyse at least one edge case, failure, defect, limitation, or trade-off illustrated by the investigation. Discuss relevant consequences for correctness, maintainability, performance, and/or scalability; you do not need to cover all four.]
-
-### Conclusion
-
-[When is your approach appropriate, what limits it, and when might an alternative become preferable? Base the conclusion on your evidence. Confirming that the current approach is suitable is a valid result.]
+The presentations from previous weeks were useful to look at and understand the code that came with the assignemnt. Asking a classmate to get some insight was good. Github copilot was also helpful for explanations and as assitance when totally lost. 
 
 <!-- Submission: commit and push this README with your source to GitHub or the internal Gitea server. Submit the final commit link and a runnable Release ZIP from that version in Studium. Ensure the teacher can access the repository throughout assessment. -->
